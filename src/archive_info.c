@@ -52,6 +52,8 @@ JMETHOD(GetArchiveInfo)(JNIEnv *jEnv, jobject jThis, jlong jPluginRef,
     jobject jEntry;
     jobject jArray;
     jobject jArrayTmp;
+    jbyteArray jFilename;
+    jsize jFilenameLen;
 
     /* libonsen vars */
     OnsenFile_t          *pFile = (OnsenFile_t *)jFileRef;
@@ -67,20 +69,20 @@ JMETHOD(GetArchiveInfo)(JNIEnv *jEnv, jobject jThis, jlong jPluginRef,
 
     (void)jThis;
 
-    if (0 == pFile->bIsMmaped) {
-        pData = (void *)(&(pFile->iFd));
+    if (0 == pFile->isMmaped) {
+        pData = (void *)(&(pFile->fd));
         lOffset = 0;
     } else {
-        pData = pFile->pData;
-        lOffset = pFile->lFileSize;
+        pData = pFile->data;
+        lOffset = pFile->fileSize;
     }
 
     /* Retrieve archive info */
     pInfo = onsen_new_archive_info();
-    pInstance = pPlugin->pInstance;
-    rc = pInstance->getArchiveInfo(pFile->bIsMmaped,
+    pInstance = pPlugin->instance;
+    rc = pInstance->getArchiveInfo(pFile->isMmaped,
                                    lOffset,
-                                   pFile->szFilename,
+                                   pFile->filename,
                                    pData,
                                    pInfo);
     if (0 == rc) {
@@ -99,8 +101,8 @@ JMETHOD(GetArchiveInfo)(JNIEnv *jEnv, jobject jThis, jlong jPluginRef,
     jClass = (*jEnv)->FindClass(jEnv, "info/lenain/onsen/OnsenArchiveEntry");
     jInit = (*jEnv)->GetMethodID(jEnv, jClass, "<init>", "()V");
 
-    for (i = 0; i < pInfo->iArchiveEntriesCount+1; i++) {
-        pEntry = pInfo->a_pArchiveEntries[i];
+    for (i = 0; i < pInfo->archiveEntriesCount+1; i++) {
+        pEntry = pInfo->archiveEntries[i];
 
         jEntry = (*jEnv)->NewObject(jEnv, jClass, jInit);
 
@@ -108,23 +110,33 @@ JMETHOD(GetArchiveInfo)(JNIEnv *jEnv, jobject jThis, jlong jPluginRef,
         (*jEnv)->SetLongField(jEnv, jEntry, jField, (jlong)pEntry);
         jField = (*jEnv)->GetFieldID(jEnv, jClass, "filename",
                                                           "Ljava/lang/String;");
-        jstr = (*jEnv)->NewStringUTF(jEnv, pEntry->szFilename);
+        jstr = (*jEnv)->NewStringUTF(jEnv, pEntry->filename);
         (*jEnv)->SetObjectField(jEnv, jEntry, jField, jstr);
+
+        if (NULL != pEntry->filename) {
+            jFilenameLen = strlen(pEntry->filename);
+            jFilename = (*jEnv)->NewByteArray(jEnv, jFilenameLen);
+            jField = (*jEnv)->GetFieldID(jEnv, jClass, "filenameC", "[B");
+            (*jEnv)->SetByteArrayRegion(jEnv, jFilename, 0, jFilenameLen,
+                                                    (jbyte*)(pEntry->filename));
+            (*jEnv)->SetObjectField(jEnv, jEntry, jField, jFilename);
+        }
+        
         jField = (*jEnv)->GetFieldID(jEnv, jClass, "offset", "I");
-        (*jEnv)->SetIntField(jEnv, jEntry, jField, pEntry->iOffset);
+        (*jEnv)->SetIntField(jEnv, jEntry, jField, pEntry->offset);
         jField = (*jEnv)->GetFieldID(jEnv, jClass, "size", "I");
-        (*jEnv)->SetIntField(jEnv, jEntry, jField, pEntry->iSize);
+        (*jEnv)->SetIntField(jEnv, jEntry, jField, pEntry->size);
         jField = (*jEnv)->GetFieldID(jEnv, jClass, "compressedSize", "I");
-        (*jEnv)->SetIntField(jEnv, jEntry, jField, pEntry->iCompressedSize);
+        (*jEnv)->SetIntField(jEnv, jEntry, jField, pEntry->compressedSize);
         jField = (*jEnv)->GetFieldID(jEnv, jClass, "isEncrypted", "Z");
-        (*jEnv)->SetBooleanField(jEnv, jEntry, jField, pEntry->bEncrypted);
+        (*jEnv)->SetBooleanField(jEnv, jEntry, jField, pEntry->isEncrypted);
         jField = (*jEnv)->GetFieldID(jEnv, jClass, "isCompressed", "Z");
-        (*jEnv)->SetBooleanField(jEnv, jEntry, jField, pEntry->bCompressed);
+        (*jEnv)->SetBooleanField(jEnv, jEntry, jField, pEntry->isCompressed);
 
         /* Build additional fields Java ArrayList */
         jArrayTmp = (*jEnv)->NewObject(jEnv, jArrayClass, jArrayInit);
-        for (j = 0; j < pEntry->iAddlFdsCount; j++) {
-            jstr = (*jEnv)->NewStringUTF(jEnv, pEntry->a_szAddlFds[j]);
+        for (j = 0; j < pEntry->addlFdsCount; j++) {
+            jstr = (*jEnv)->NewStringUTF(jEnv, pEntry->addlFds[j]);
             (*jEnv)->CallBooleanMethod(jEnv, jArrayTmp, jArrayAdd, jstr);
         }
 
@@ -144,9 +156,9 @@ JMETHOD(GetArchiveInfo)(JNIEnv *jEnv, jobject jThis, jlong jPluginRef,
     (*jEnv)->SetLongField(jEnv, jInfo, jField, (jlong)pInfo);
     jField = (*jEnv)->GetFieldID(jEnv, jClass, "archiveFileSize", "J");
     (*jEnv)->SetLongField(jEnv, jInfo, jField,
-                                              (jlong)(pInfo->lArchiveFileSize));
+                                              (jlong)(pInfo->archiveFileSize));
     jField = (*jEnv)->GetFieldID(jEnv, jClass, "archiveFilenamesEncoding", "I");
-    (*jEnv)->SetIntField(jEnv, jInfo, jField, pInfo->eArchiveFilenamesEncoding);
+    (*jEnv)->SetIntField(jEnv, jInfo, jField, pInfo->archiveFilenamesEncoding);
     jField = (*jEnv)->GetFieldID(jEnv, jClass, "archiveEntries",
                                                        "Ljava/util/ArrayList;");
     (*jEnv)->SetObjectField(jEnv, jInfo, jField, jArray);

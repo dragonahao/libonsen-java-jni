@@ -71,15 +71,15 @@ JMETHOD(LoadPlugin)(JNIEnv *jEnv, jobject jThis, jstring jPluginName)
     jField = (*jEnv)->GetFieldID(jEnv, jClass, "cRef", "J");
     (*jEnv)->SetLongField(jEnv, jObject, jField, (jlong)(pPlugin));
     jField = (*jEnv)->GetFieldID(jEnv, jClass, "type", "C");
-    (*jEnv)->SetCharField(jEnv, jObject, jField, (jchar)(pPlugin->iType));
+    (*jEnv)->SetCharField(jEnv, jObject, jField, (jchar)(pPlugin->type));
     jField = (*jEnv)->GetFieldID(jEnv, jClass, "name", "Ljava/lang/String;");
-    jstr = (*jEnv)->NewStringUTF(jEnv, pPlugin->szName);
+    jstr = (*jEnv)->NewStringUTF(jEnv, pPlugin->name);
     (*jEnv)->SetObjectField(jEnv, jObject, jField, jstr);
     jField = (*jEnv)->GetFieldID(jEnv, jClass, "version", "Ljava/lang/String;");
-    jstr = (*jEnv)->NewStringUTF(jEnv, pPlugin->szVersion);
+    jstr = (*jEnv)->NewStringUTF(jEnv, pPlugin->version);
     (*jEnv)->SetObjectField(jEnv, jObject, jField, jstr);
     jField = (*jEnv)->GetFieldID(jEnv, jClass, "authors", "Ljava/lang/String;");
-    jstr = (*jEnv)->NewStringUTF(jEnv, pPlugin->szAuthors);
+    jstr = (*jEnv)->NewStringUTF(jEnv, pPlugin->authors);
     (*jEnv)->SetObjectField(jEnv, jObject, jField, jstr);
 
     return jObject;
@@ -110,16 +110,16 @@ JMETHOD(IsFileSupported)(JNIEnv *jEnv, jobject jThis, jlong jPluginRef,
     (void)jEnv;
     (void)jThis;
 
-    if (0 == pFile->bIsMmaped) {
-        pData = (void *)(&(pFile->iFd));
+    if (0 == pFile->isMmaped) {
+        pData = (void *)(&(pFile->fd));
         lOffset = 0;
     } else {
-        pData = pFile->pData;
-        lOffset = pFile->lFileSize;
+        pData = pFile->data;
+        lOffset = pFile->fileSize;
     }
 
-    return (pPlugin->isFileSupported(pFile->bIsMmaped,
-                                     pFile->szFilename,
+    return (pPlugin->isFileSupported(pFile->isMmaped,
+                                     pFile->filename,
                                      pData,
                                      lOffset));
 }

@@ -66,14 +66,14 @@ JMETHOD(OpenFile)(JNIEnv *jEnv, jobject jThis, jstring jfilename)
     (*jEnv)->SetLongField(jEnv, jObject, jField, (jlong)pFile);
     jField = (*jEnv)->GetFieldID(jEnv, jClass, "filename",
                                                           "Ljava/lang/String;");
-    jstr = (*jEnv)->NewStringUTF(jEnv, pFile->szFilename);
+    jstr = (*jEnv)->NewStringUTF(jEnv, pFile->filename);
     (*jEnv)->SetObjectField(jEnv, jObject, jField, jstr);
     jField = (*jEnv)->GetFieldID(jEnv, jClass, "isMmaped", "Z");
-    (*jEnv)->SetBooleanField(jEnv, jObject, jField, pFile->bIsMmaped);
+    (*jEnv)->SetBooleanField(jEnv, jObject, jField, pFile->isMmaped);
     jField = (*jEnv)->GetFieldID(jEnv, jClass, "fd", "I");
-    (*jEnv)->SetIntField(jEnv, jObject, jField, pFile->iFd);
+    (*jEnv)->SetIntField(jEnv, jObject, jField, pFile->fd);
     jField = (*jEnv)->GetFieldID(jEnv, jClass, "fileSize", "J");
-    (*jEnv)->SetLongField(jEnv, jObject, jField, pFile->lFileSize);
+    (*jEnv)->SetLongField(jEnv, jObject, jField, pFile->fileSize);
 
     return jObject;
 }
